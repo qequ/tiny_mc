@@ -5,7 +5,7 @@
  * Adaptado para CP2014, Nicolas Wolovick
  */
 
-#define _XOPEN_SOURCE 500  // M_PI
+#define _XOPEN_SOURCE 500 // M_PI
 
 #include "params.h"
 #include "wtime.h"
@@ -25,6 +25,13 @@ char t3[] = "CPU version, adapted for PEAGPGPU by Gustavo Castellano"
 static float heat[SHELLS];
 static float heat2[SHELLS];
 
+// flops counter and incremental function
+double flops_counter = 0;
+
+void update_flops_counter(int num_ops)
+{
+    flops_counter += num_ops;
+}
 
 /***
  * Photon
@@ -57,6 +64,7 @@ static void photon(void)
         heat[shell] += (1.0f - albedo) * weight;
         heat2[shell] += (1.0f - albedo) * (1.0f - albedo) * weight * weight; /* add up squares */
         weight *= albedo;
+        update_flops_counter(27);
 
         /* New direction, rejection method */
         float xi1, xi2;
@@ -64,15 +72,20 @@ static void photon(void)
             xi1 = 2.0f * rand() / (float)RAND_MAX - 1.0f;
             xi2 = 2.0f * rand() / (float)RAND_MAX - 1.0f;
             t = xi1 * xi1 + xi2 * xi2;
+            update_flops_counter(9);
         } while (1.0f < t);
         u = 2.0f * t - 1.0f;
         v = xi1 * sqrtf((1.0f - u * u) / t);
         w = xi2 * sqrtf((1.0f - u * u) / t);
+        update_flops_counter(12);
 
         if (weight < 0.001f) { /* roulette */
-            if (rand() / (float)RAND_MAX > 0.1f)
+            if (rand() / (float)RAND_MAX > 0.1f) {
+                update_flops_counter(2);
                 break;
+            }
             weight /= 0.1f;
+            update_flops_counter(1);
         }
     }
 }
@@ -115,6 +128,9 @@ int main(void)
                sqrt(heat2[i] - heat[i] * heat[i] / PHOTONS) / t / (i * i + i + 1.0f / 3.0f));
     }
     printf("# extra\t%12.5f\n", heat[SHELLS - 1] / PHOTONS);
+
+    double gflops = flops_counter / (1000.0 * 1000.0 * 1000.0 * elapsed);
+    printf("%f GFLOPS\n", gflops);
 
     return 0;
 }
