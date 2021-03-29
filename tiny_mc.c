@@ -86,11 +86,12 @@ static void photon(void)
 int main(void)
 {
     // heading
+    /*
     printf("# %s\n# %s\n# %s\n", t1, t2, t3);
     printf("# Scattering = %8.3f/cm\n", MU_S);
     printf("# Absorption = %8.3f/cm\n", MU_A);
     printf("# Photons    = %8d\n#\n", PHOTONS);
-
+    */
     // configure RNG
     srand(SEED);
     // start timer
@@ -104,9 +105,14 @@ int main(void)
     assert(start <= end);
     double elapsed = end - start;
 
+    /*
     printf("# %lf seconds\n", elapsed);
     printf("# %lf K photons per second\n", 1e-3 * PHOTONS / elapsed);
+    */
+    //
+    printf("%lf\n", 1e-3 * PHOTONS / elapsed);
 
+    /*
     printf("# Radius\tHeat\n");
     printf("# [microns]\t[W/cm^3]\tError\n");
     float t = 4.0f * M_PI * powf(MICRONS_PER_SHELL, 3.0f) * PHOTONS / 1e12;
@@ -116,6 +122,6 @@ int main(void)
                sqrt(heat2[i] - heat[i] * heat[i] / PHOTONS) / t / (i * i + i + 1.0f / 3.0f));
     }
     printf("# extra\t%12.5f\n", heat[SHELLS - 1] / PHOTONS);
-
+    */
     return 0;
 }
