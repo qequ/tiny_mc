@@ -2,3 +2,4 @@ tiny_mc
 *.o
 .vscode
 __pycache__
+means.txt
