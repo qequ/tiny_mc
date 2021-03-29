@@ -1,3 +1,4 @@
 tiny_mc
 *.o
 .vscode
+__pycache__
