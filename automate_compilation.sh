@@ -7,7 +7,7 @@ for ((i = 1; i <= 30; i = i + 1)); do
 done
 
 #No entiendo qué hace esta línea.
-rm -rfv means.txt && touch means.txt
+rm -rfv means.txt; touch means.txt
 
 #Lo que hace esto es leer líneas de parameters.txt que son tipos de compilaciones. 
 #A cada tipo de compilación le hace correr tiny_mc con los 30 números aleatorios generados. 
