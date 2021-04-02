@@ -22,5 +22,6 @@ cat parameters.txt | while read p; do
     echo python;python3 mean_calc.py photons_results.txt "${p}"; rm -rfv photons_results.txt
 done
 
+python3 plot_means.py
 #No entiendo qué hace esta línea.
 rm -rfv sample.txt
