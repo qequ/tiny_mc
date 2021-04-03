@@ -60,11 +60,17 @@ static void photon(void)
 
         /* New direction, rejection method */
         float xi1, xi2;
+        /*
         do {
             xi1 = 2.0f * rand() / (float)RAND_MAX - 1.0f;
             xi2 = 2.0f * rand() / (float)RAND_MAX - 1.0f;
             t = xi1 * xi1 + xi2 * xi2;
         } while (1.0f < t);
+        */
+        xi1 = 2.0f * rand() / (float)RAND_MAX - 1.0f;
+        xi2 = (rand() / (float)RAND_MAX) * sqrtf(1-xi1 * xi1);
+        t = xi1 * xi1 + xi2 * xi2;
+        assert(t <= 1.0f);
         u = 2.0f * t - 1.0f;
         v = xi1 * sqrtf((1.0f - u * u) / t);
         w = xi2 * sqrtf((1.0f - u * u) / t);
