@@ -33,8 +33,8 @@ static float heat2[SHELLS];
 
 static void photon(MTRand r)
 {
-    const float albedo = MU_S / (MU_S + MU_A);
-    const float shells_per_mfp = 1e4 / MICRONS_PER_SHELL / (MU_A + MU_S);
+    const float albedo = MU_S * (1.0f / (MU_S + MU_A));
+    const float shells_per_mfp = 1e4 * (1.0f / MICRONS_PER_SHELL) * (1.0f / (MU_A + MU_S));
 
     /* launch */
     float x = 0.0f;
@@ -61,33 +61,30 @@ static void photon(MTRand r)
 
         /* New direction, rejection method */
         float xi1, xi2;
-
+        /*
         do {
-            xi1 = 2.0f * (float)genRand(&r) - 1.0f;
-            xi2 = ((float)genRand(&r)) * sqrtf(1 - xi1 * xi1);
-            t = xi1 * xi1 + xi2 * xi2;
-            /*
+            
             xi1 = 2.0f * rand() / (float)RAND_MAX - 1.0f;
             xi2 = 2.0f * rand() / (float)RAND_MAX - 1.0f;
             t = xi1 * xi1 + xi2 * xi2;
-            */
+            
         } while (1.0f < t);
-
-        /*
-        xi1 = 2.0f * (float)genRand(&r) - 1.0f;
-        xi2 = ((float)genRand(&r)) * sqrtf(1-xi1 * xi1);
-        t = xi1 * xi1 + xi2 * xi2;
         */
+
+        xi1 = 2.0f * (float)genRand(&r) - 1.0f;
+        xi2 = ((float)genRand(&r)) * sqrtf(1 - xi1 * xi1);
+        t = xi1 * xi1 + xi2 * xi2;
+
         assert(t <= 1.0f);
         u = 2.0f * t - 1.0f;
-        v = xi1 * sqrtf((1.0f - u * u) / t);
-        w = xi2 * sqrtf((1.0f - u * u) / t);
+        v = xi1 * sqrtf((1.0f - u * u) * (1.0f / t));
+        w = xi2 * sqrtf((1.0f - u * u) * (1.0f / t));
 
         if (weight < 0.001f) { /* roulette */
             if ((float)genRand(&r) > 0.1f) {
                 break;
             }
-            weight /= 0.1f;
+            weight *= 10.0f;
         }
     }
 }
