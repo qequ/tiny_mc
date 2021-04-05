@@ -10,7 +10,7 @@ LDFLAGS = -lm
 TARGET = tiny_mc
 
 # Files
-C_SOURCES = tiny_mc.c wtime.c
+C_SOURCES = tiny_mc.c wtime.c mtwister.c
 C_OBJS = $(patsubst %.c, %.o, $(C_SOURCES))
 
 # Rules
