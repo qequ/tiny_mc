@@ -7,6 +7,7 @@
 
 #define _XOPEN_SOURCE 500 // M_PI
 
+#include "mtwister.h"
 #include "params.h"
 #include "wtime.h"
 
@@ -30,7 +31,7 @@ static float heat2[SHELLS];
  * Photon
  ***/
 
-static void photon(void)
+static void photon(MTRand r)
 {
     const float albedo = MU_S / (MU_S + MU_A);
     const float shells_per_mfp = 1e4 / MICRONS_PER_SHELL / (MU_A + MU_S);
@@ -45,7 +46,7 @@ static void photon(void)
     float weight = 1.0f;
 
     for (;;) {
-        float t = -logf(rand() / (float)RAND_MAX); /* move */
+        float t = -logf((float)genRand(&r)); /* move */
         x += t * u;
         y += t * v;
         z += t * w;
@@ -60,23 +61,30 @@ static void photon(void)
 
         /* New direction, rejection method */
         float xi1, xi2;
-        /*
+
         do {
+            xi1 = 2.0f * (float)genRand(&r) - 1.0f;
+            xi2 = ((float)genRand(&r)) * sqrtf(1 - xi1 * xi1);
+            t = xi1 * xi1 + xi2 * xi2;
+            /*
             xi1 = 2.0f * rand() / (float)RAND_MAX - 1.0f;
             xi2 = 2.0f * rand() / (float)RAND_MAX - 1.0f;
             t = xi1 * xi1 + xi2 * xi2;
+            */
         } while (1.0f < t);
-        */
-        xi1 = 2.0f * rand() / (float)RAND_MAX - 1.0f;
-        xi2 = (rand() / (float)RAND_MAX) * sqrtf(1-xi1 * xi1);
+
+        /*
+        xi1 = 2.0f * (float)genRand(&r) - 1.0f;
+        xi2 = ((float)genRand(&r)) * sqrtf(1-xi1 * xi1);
         t = xi1 * xi1 + xi2 * xi2;
+        */
         assert(t <= 1.0f);
         u = 2.0f * t - 1.0f;
         v = xi1 * sqrtf((1.0f - u * u) / t);
         w = xi2 * sqrtf((1.0f - u * u) / t);
 
         if (weight < 0.001f) { /* roulette */
-            if (rand() / (float)RAND_MAX > 0.1f) {
+            if ((float)genRand(&r) > 0.1f) {
                 break;
             }
             weight /= 0.1f;
@@ -99,12 +107,14 @@ int main(void)
     printf("# Photons    = %8d\n#\n", PHOTONS);
     */
     // configure RNG
-    srand(SEED);
+    //srand(SEED);
+    MTRand r = seedRand(SEED);
+
     // start timer
     double start = wtime();
     // simulation
     for (unsigned int i = 0; i < PHOTONS; ++i) {
-        photon();
+        photon(r);
     }
     // stop timer
     double end = wtime();
