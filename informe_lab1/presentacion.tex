@@ -34,4 +34,50 @@
 \end{frame}
 
 
+\begin{frame}
+    \frametitle{Optimizaciones}
+
+    Primero elegimos un conjunto de flags óptimas \pause
+    \includegraphics[width=3in]{./imagenes/comparacion_flags_sin_optimizar.png}
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{Optimizaciones}
+
+    Fragmento de código a optimizar \\
+    \includegraphics[width=4in]{./imagenes/dowhile_optimizar.png}
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{Optimizaciones}
+    ¿Qué es lo que hace este código? \\ \pause
+    \begin{center}
+        $xi1, xi2  \in [-1, 1] $ \\ \pause
+        $t = (xi1)^2 + (xi2)^2$ \\ \pause
+        i.e $ t \in [0,1]$
+    
+    \end{center}
+
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Optimizaciones}
+    \begin{center}
+        $ t <= 1 $ \\\pause
+        $(xi1)^2 + (xi2)^2 <= 1$ \\\pause
+        $(xi2)^2 <= 1 - (xi1)^2$ \\\pause
+        $xi2 <= \sqrt{1 - (xi1)^2}$\\\pause
+        i.e $xi1 \in [0, 1]$\\
+        $xi2 \in [0, \sqrt{1 - (xi1)^2}]$    
+
+    \end{center}
+
+
+\end{frame}
+
+
+
 \end{document}
