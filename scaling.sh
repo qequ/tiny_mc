@@ -17,7 +17,7 @@ cat scaling_sample.txt | while read m; do
     echo python; python3 mean_calc.py photons_results.txt "${m}"; rm -rfv photons_results.txt
 done
 
-python3 plot_means.py
+python3 plot_means.py "scalling"
 
 rm -rfv scaling_sample.txt
 
