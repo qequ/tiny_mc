@@ -70,12 +70,13 @@ static void photon(MTRand r)
             
         } while (1.0f < t);
         */
+
         if ((float)genRand(&r) > 0.5) {
             xi1 = 2.0f * (float)genRand(&r) - 1.0f;
-            xi2 = ((float)genRand(&r)) * sqrtf(1 - xi1 * xi1) - sqrtf(1 - xi1 * xi1);
+            xi2 = ((float)genRand(&r)) * 2 * sqrtf(1 - xi1 * xi1) - sqrtf(1 - xi1 * xi1);
         } else {
             xi2 = 2.0f * (float)genRand(&r) - 1.0f;
-            xi1 = ((float)genRand(&r)) * sqrtf(1 - xi2 * xi2) - sqrtf(1 - xi2 * xi2);
+            xi1 = ((float)genRand(&r)) * 2 * sqrtf(1 - xi2 * xi2) - sqrtf(1 - xi2 * xi2);
         }
 
         t = xi1 * xi1 + xi2 * xi2;
