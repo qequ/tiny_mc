@@ -61,16 +61,16 @@ static void photon(MTRand r)
 
         /* New direction, rejection method */
         float xi1, xi2;
-        /*
+        
         do {
             
-            xi1 = 2.0f * rand() / (float)RAND_MAX - 1.0f;
-            xi2 = 2.0f * rand() / (float)RAND_MAX - 1.0f;
+            xi1 = 2.0f * genRand(&r) - 1.0f;
+            xi2 = 2.0f * genRand(&r) - 1.0f;
             t = xi1 * xi1 + xi2 * xi2;
             
         } while (1.0f < t);
-        */
-
+        
+        /*
         if ((float)genRand(&r) > 0.5) {
             xi1 = 2.0f * (float)genRand(&r) - 1.0f;
             xi2 = ((float)genRand(&r)) * 2 * sqrtf(1 - xi1 * xi1) - sqrtf(1 - xi1 * xi1);
@@ -80,7 +80,7 @@ static void photon(MTRand r)
         }
 
         t = xi1 * xi1 + xi2 * xi2;
-
+        */
         assert(t <= 1.0f);
         u = 2.0f * t - 1.0f;
         v = xi1 * sqrtf((1.0f - u * u) * (1.0f / t));
