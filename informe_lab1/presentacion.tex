@@ -7,7 +7,7 @@
 %Information to be included in the title page:
 \title{Laboratorio 1}
 \author{Alvaro Frias Garay - Ary Lautaro Di Bartolo}
-\institute{Universidad Nacional de Córdoba - Universidad de Lautaro}
+\institute{Universidad Nacional de Córdoba - Universidad Nacional de Cuyo}
 \date{2021}
 
 
@@ -44,54 +44,13 @@
 
 \begin{frame}
     \frametitle{Optimizaciones}
-
-    Fragmento de código a optimizar \\
-    \includegraphics[width=4in]{./imagenes/dowhile_optimizar.png}
-
-\end{frame}
-
-\begin{frame}
-    \frametitle{Optimizaciones}
-    ¿Qué es lo que hace este código? \\ \pause
-    \begin{center}
-        $xi1, xi2  \in [-1, 1] $ \\ \pause
-        $t = (xi1)^2 + (xi2)^2$ \\ \pause
-        i.e $ t \in [0,1]$
-    
-    \end{center}
-
-\end{frame}
-
-
-\begin{frame}
-    \frametitle{Optimizaciones}
-    \begin{center}
-        $ t <= 1 $ \\\pause
-        $(xi1)^2 + (xi2)^2 <= 1$ \\\pause
-        $(xi2)^2 <= 1 - (xi1)^2$ \\\pause
-        $xi2 <= \sqrt{1 - (xi1)^2}$\\\pause
-        i.e $xi1 \in [0, 1]$\\
-        $xi2 \in [0, \sqrt{1 - (xi1)^2}]$    
-
-    \end{center}
-
-\end{frame}
-
-\begin{frame}
-    \frametitle{Optimizaciones}
-
-    \includegraphics[width=4in]{imagenes/optimizaciones_1.png}
-\end{frame}
-
-\begin{frame}
-    \frametitle{Optimizaciones}
         Reemplazamos rand() por una implementación de Mersenne Twister en puro C\\\pause
         https://github.com/ESultanik/mtwister
 \end{frame}
 
 \begin{frame}
     \frametitle{Optimizaciones}
-    \includegraphics[width=4in]{imagenes/optimizaciones_2.png}
+    \includegraphics[width=4in]{imagenes/optimizacion_1.png}
 
 \end{frame}
 
@@ -108,13 +67,50 @@
 
 \begin{frame}
     \frametitle{Optimizaciones}
-    \includegraphics[width=4in]{imagenes/optimizaciones_3.png}
+    \includegraphics[width=4in]{imagenes/optimizacion_2.png}
 \end{frame}
 
 \begin{frame}
     \frametitle{Scalling}
     \includegraphics[width=4in]{imagenes/scaling.png}    
 \end{frame}
+
+
+\begin{frame}
+    \frametitle{Optimizaciones fallidas}
+
+    Fragmento de código a optimizar \\
+    \includegraphics[width=4in]{./imagenes/dowhile_optimizar.png}
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{Optimizaciones fallidas}
+    ¿Qué es lo que hace este código? \\ \pause
+    \begin{center}
+        $xi1, xi2  \in [-1, 1] $ \\ \pause
+        $t = (xi1)^2 + (xi2)^2$ \\ \pause
+        i.e $ t \in [0,1]$
+    
+    \end{center}
+
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Optimizaciones fallidas}
+    \begin{center}
+        $ t <= 1 $ \\\pause
+        $(xi1)^2 + (xi2)^2 <= 1$ \\\pause
+        $(xi2)^2 <= 1 - (xi1)^2$ \\\pause
+        $xi2 <= \sqrt{1 - (xi1)^2}$\\\pause
+        i.e $xi1 \in [0, 1]$\\
+        $xi2 \in [0, \sqrt{1 - (xi1)^2}]$    
+
+    \end{center}
+
+\end{frame}
+
 
 
 \end{document}
