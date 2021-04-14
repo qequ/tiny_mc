@@ -81,7 +81,6 @@ static void photon(MTRand r)
 
         t = xi1 * xi1 + xi2 * xi2;
         */
-        assert(t <= 1.0f);
         u = 2.0f * t - 1.0f;
         v = xi1 * sqrtf((1.0f - u * u) * (1.0f / t));
         w = xi2 * sqrtf((1.0f - u * u) * (1.0f / t));
