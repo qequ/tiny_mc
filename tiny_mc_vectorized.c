@@ -64,6 +64,9 @@ static void photon(MTRand r)
     __m256 weight = _mm256_set1_ps(1.0f);
 
 
+    // helper vectors
+    __m256 ones_vector = _mm256_set1_ps(1.0f);
+
     for (;;) {
 
         for (unsigned int i = 0; i < 8; ++i) {
@@ -82,17 +85,51 @@ static void photon(MTRand r)
                                  -logf(array_rnd[6]),
                                  -logf(array_rnd[7]));
 
+        /*
         x += t * u;
         y += t * v;
         z += t * w;
+        */
+        //fmadd_ps(a, b, c) == (a * b) + c
+        x = _mm256_fmadd_ps(t, u, x);
+        y = _mm256_fmadd_ps(t, v, y);
+        z = _mm256_fmadd_ps(t, w, z);
 
-        unsigned int shell = sqrtf(x * x + y * y + z * z) * shells_per_mfp; /* absorb */
+        // cuadrados de números
+        __m256 x_squared = _mm256_mul_ps(x, x);
+        __m256 y_squared = _mm256_mul_ps(y, y);
+        __m256 z_squared = _mm256_mul_ps(z, z);
+
+        __m256 sum_cord = _mm256_add_ps(_mm256_add_ps(x_squared, y_squared), z_squared);
+        //unsigned int shell = sqrtf(x * x + y * y + z * z) * shells_per_mfp; 
+        /* absorb */
+        __m256i shell_vector = _mm256_cvtps_epi32(_mm256_mul_ps(_mm256_sqrt_ps(sum_cord), shells_per_mfp));
+        __m256i max_shell_vector = _mm256_set1_epi32(SHELLS - 1);
+        
+        /*
         if (shell > SHELLS - 1) {
             shell = SHELLS - 1;
         }
+        */
+        shell_vector = _mm256_min_epi32(shell_vector, max_shell_vector);
+
+
+        /*
         heat[shell] += (1.0f - albedo) * weight;
-        heat2[shell] += (1.0f - albedo) * (1.0f - albedo) * weight * weight; /* add up squares */
+        heat2[shell] += (1.0f - albedo) * (1.0f - albedo) * weight * weight;  
         weight *= albedo;
+        */
+        __m256 helper_vector = _mm256_mul_ps(_mm256_sub_ps(ones_vector, albedo), weight);
+        __m256 helper_vector_squared = _mm256_mul_ps(helper_vector, helper_vector); /* add up squares */
+
+        for (unsigned int i=0; i < 8; ++i){
+            heat[shell_vector[i]] += helper_vector[i];
+            heat2[shell_vector[i]] += helper_vector_squared[i];
+        }
+
+        weight = _mm256_mul_ps(weight, albedo);
+
+
 
         /* New direction, rejection method */
         float xi1, xi2;
