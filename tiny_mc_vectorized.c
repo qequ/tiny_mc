@@ -132,8 +132,9 @@ static void photon(MTRand r)
 
 
         /* New direction, rejection method */
-        float xi1, xi2;
+        //float xi1, xi2;
 
+        /*
         do {
 
             xi1 = 2.0f * genRand(&r) - 1.0f;
@@ -141,10 +142,43 @@ static void photon(MTRand r)
             t = xi1 * xi1 + xi2 * xi2;
 
         } while (1.0f < t);
+        */
 
+       // Creo los vectores xi1 y xi2 con 1s para poder hacer lo que sigue. 
+       // BORRAR DESPUÊS
+
+       __m256 xi1 = _mm256_set1_ps(1.0f);
+       __m256 xi2 = _mm256_set1_ps(1.0f);
+
+        /*
         u = 2.0f * t - 1.0f;
         v = xi1 * sqrtf((1.0f - u * u) * (1.0f / t));
         w = xi2 * sqrtf((1.0f - u * u) * (1.0f / t));
+        */
+
+        // El vector de unos se llama "ones_vector", creo el vector de dos.
+        __m256 twos_vector = _mm256_set1_ps(2.0f);
+
+        // Creo vector de "2.0f * t" (multiplicación), creo vector de "(2.0f * t) - (1.0f)" (resta) y lo
+        // asigno en el vector "u".
+
+        __m256 u = _mm256_sub_ps (_mm256_mul_ps(twos_vector,t),ones_vector);
+
+        // Creo vector de "u * u" (multiplicación), creo vector de "(1.0f) - (u * u)" (resta),
+        // creo vector de "(1.0f / t)" (división), crear vector de "(1.0f - u * u) * (1.0f / t)" 
+        // (multiplicación), creo vector de "sqrtf((1.0f - u * u) * (1.0f / t))" (raiz cuadrada).
+
+        __m256 root = _mm256_sqrt_ps(_mm256_mul_ps(_mm256_sub_ps(ones_vector,_mm256_mul_ps(u,u)),_mm256_div_ps(ones_vector,t)));
+
+        // Creo vector de "(xi1) * (sqrtf((1.0f - u * u) * (1.0f / t)))" (multiplicación) y 
+        // lo asigno al vector "v".
+
+        __m256 v = _mm256_mul_ps(xi1,root);
+            
+        // Creo vector de "(xi1) * (sqrtf((1.0f - u * u) * (1.0f / t)))" (multiplicación) y 
+        // lo asigno al vector "w".
+
+        __m256 w = _mm256_mul_ps(xi2,root);
 
         if (weight < 0.001f) { /* roulette */
             if ((float)genRand(&r) > 0.1f) {
