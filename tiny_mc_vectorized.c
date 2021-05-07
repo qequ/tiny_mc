@@ -144,8 +144,7 @@ static void photon(MTRand r)
         } while (1.0f < t);
         */
 
-       // Creo los vectores xi1 y xi2 con 1s para poder hacer lo que sigue. 
-       // BORRAR DESPUÊS
+       // Aux. DELETE WHEN THE DOWHILE IS UPDATED.
 
        __m256 xi1 = _mm256_set1_ps(1.0f);
        __m256 xi2 = _mm256_set1_ps(1.0f);
@@ -156,36 +155,55 @@ static void photon(MTRand r)
         w = xi2 * sqrtf((1.0f - u * u) * (1.0f / t));
         */
 
-        // El vector de unos se llama "ones_vector", creo el vector de dos.
+        // Aux vector.
         __m256 twos_vector = _mm256_set1_ps(2.0f);
-
-        // Creo vector de "2.0f * t" (multiplicación), creo vector de "(2.0f * t) - (1.0f)" (resta) y lo
-        // asigno en el vector "u".
 
         __m256 u = _mm256_sub_ps (_mm256_mul_ps(twos_vector,t),ones_vector);
 
-        // Creo vector de "u * u" (multiplicación), creo vector de "(1.0f) - (u * u)" (resta),
-        // creo vector de "(1.0f / t)" (división), crear vector de "(1.0f - u * u) * (1.0f / t)" 
-        // (multiplicación), creo vector de "sqrtf((1.0f - u * u) * (1.0f / t))" (raiz cuadrada).
-
         __m256 root = _mm256_sqrt_ps(_mm256_mul_ps(_mm256_sub_ps(ones_vector,_mm256_mul_ps(u,u)),_mm256_div_ps(ones_vector,t)));
-
-        // Creo vector de "(xi1) * (sqrtf((1.0f - u * u) * (1.0f / t)))" (multiplicación) y 
-        // lo asigno al vector "v".
 
         __m256 v = _mm256_mul_ps(xi1,root);
             
-        // Creo vector de "(xi1) * (sqrtf((1.0f - u * u) * (1.0f / t)))" (multiplicación) y 
-        // lo asigno al vector "w".
-
         __m256 w = _mm256_mul_ps(xi2,root);
 
-        if (weight < 0.001f) { /* roulette */
+        
+        /*
+        if (weight < 0.001f) { 
             if ((float)genRand(&r) > 0.1f) {
                 break;
             }
             weight *= 10.0f;
         }
+        */
+       
+       // Vector de 0.001s.
+       __m256 little_vector = _mm256_set1_ps(0.001f);
+
+       // Resultado de comparar si "weight" es menor a 0.001.
+       __m256 ifResult1 = _mm256_cmp_ps(weight,little_vector,_CMP_LT_OS);
+
+       // Random vector.
+       float array_rnd2[8];
+
+       for (unsigned int i = 0; i < 8; ++i) {
+            array_rnd2[i] = (float)genRand(&r);
+        }
+
+        __m256 Rdm = _mm256_set_ps(-logf(array_rnd2[0]),
+                                 -logf(array_rnd2[1]),
+                                 -logf(array_rnd2[2]),
+                                 -logf(array_rnd2[3]),
+                                 -logf(array_rnd2[4]),
+                                 -logf(array_rnd2[5]),
+                                 -logf(array_rnd2[6]),
+                                 -logf(array_rnd2[7]));
+
+        // Vector de 0.1s.
+        __m256 not_that_little_vector = _mm256_set1_ps(0.1f);
+
+        // Resultado de comparar si "Rdm" es mayor a 0.1.
+        __m256 ifResult2 = _mm256_cmp_ps(Rdm,not_that_little_vector,_CMP_GT_OS);
+        
     }
 }
 
