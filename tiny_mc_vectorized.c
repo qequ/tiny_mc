@@ -93,6 +93,9 @@ static void photon(MTRand r)
 
     // helper vectors
     __m256 ones_vector = _mm256_set1_ps(1.0f);
+    __m256 twos_vector = _mm256_set1_ps(2.0f);
+    __m256 little_vector = _mm256_set1_ps(0.001f);
+    __m256 not_that_little_vector = _mm256_set1_ps(0.1f);
 
     for (;;) {
 
@@ -234,10 +237,7 @@ static void photon(MTRand r)
         u = 2.0f * t - 1.0f;
         v = xi1 * sqrtf((1.0f - u * u) * (1.0f / t));
         w = xi2 * sqrtf((1.0f - u * u) * (1.0f / t));
-        */
-
-        // Aux vector.
-        __m256 twos_vector = _mm256_set1_ps(2.0f);
+        */      
 
         __m256 u = _mm256_sub_ps(_mm256_mul_ps(twos_vector, t), ones_vector);
 
@@ -246,7 +246,6 @@ static void photon(MTRand r)
         __m256 v = _mm256_mul_ps(xi1, root);
 
         __m256 w = _mm256_mul_ps(xi2, root);
-
 
         /*
         if (weight < 0.001f) { 
@@ -257,12 +256,8 @@ static void photon(MTRand r)
         }
         */
 
-        // Vector de 0.001s.
-        __m256 little_vector = _mm256_set1_ps(0.001f);
-
         // Resultado de comparar si "weight" es menor a 0.001.
         __m256 ifResult1 = _mm256_cmp_ps(weight, little_vector, _CMP_LT_OS);
-
 
         for (unsigned int i = 0; i < 8; ++i) {
             array_rnd2[i] = (float)genRand(&r);
@@ -276,9 +271,6 @@ static void photon(MTRand r)
                                    -logf(array_rnd2[5]),
                                    -logf(array_rnd2[6]),
                                    -logf(array_rnd2[7]));
-
-        // Vector de 0.1s.
-        __m256 not_that_little_vector = _mm256_set1_ps(0.1f);
 
         // Resultado de comparar si "Rdm" es mayor a 0.1.
         __m256 ifResult2 = _mm256_cmp_ps(Rdm, not_that_little_vector, _CMP_GT_OS);
