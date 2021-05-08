@@ -28,6 +28,29 @@ static float heat[SHELLS];
 static float heat2[SHELLS];
 
 
+// useful for checking if a vector mask has its 8 elements equal to 0xFFFFFFFF
+unsigned int mask_complete(__m256 vec_mask)
+{
+    for (unsigned int i = 0; i < 8; ++i) {
+        if (!vec_mask[i]) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+
+unsigned int check_t_correct(__m256 t)
+{
+    for (unsigned int i = 0; i < 8; ++i) {
+        if (1.0f < t[i]) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+
 /***
  * Photon
  ***/
@@ -41,7 +64,11 @@ static void photon(MTRand r)
     const __m256 albedo = _mm256_set1_ps(MU_S * (1.0f / (MU_S + MU_A)));
     const __m256 shells_per_mfp = _mm256_set1_ps(1e4 * (1.0f / MICRONS_PER_SHELL) * (1.0f / (MU_A + MU_S)));
 
+
+    // Random arrays.
     float array_rnd[8];
+    float array_rnd2[8];
+
     /* launch */
 
     /*
@@ -101,11 +128,11 @@ static void photon(MTRand r)
         __m256 z_squared = _mm256_mul_ps(z, z);
 
         __m256 sum_cord = _mm256_add_ps(_mm256_add_ps(x_squared, y_squared), z_squared);
-        //unsigned int shell = sqrtf(x * x + y * y + z * z) * shells_per_mfp; 
+        //unsigned int shell = sqrtf(x * x + y * y + z * z) * shells_per_mfp;
         /* absorb */
         __m256i shell_vector = _mm256_cvtps_epi32(_mm256_mul_ps(_mm256_sqrt_ps(sum_cord), shells_per_mfp));
         __m256i max_shell_vector = _mm256_set1_epi32(SHELLS - 1);
-        
+
         /*
         if (shell > SHELLS - 1) {
             shell = SHELLS - 1;
@@ -122,13 +149,12 @@ static void photon(MTRand r)
         __m256 helper_vector = _mm256_mul_ps(_mm256_sub_ps(ones_vector, albedo), weight);
         __m256 helper_vector_squared = _mm256_mul_ps(helper_vector, helper_vector); /* add up squares */
 
-        for (unsigned int i=0; i < 8; ++i){
+        for (unsigned int i = 0; i < 8; ++i) {
             heat[shell_vector[i]] += helper_vector[i];
             heat2[shell_vector[i]] += helper_vector_squared[i];
         }
 
         weight = _mm256_mul_ps(weight, albedo);
-
 
 
         /* New direction, rejection method */
@@ -144,10 +170,65 @@ static void photon(MTRand r)
         } while (1.0f < t);
         */
 
-       // Aux. DELETE WHEN THE DOWHILE IS UPDATED.
+        __m256 vec_mask = _mm256_set1_ps(0.0f);
 
-       __m256 xi1 = _mm256_set1_ps(1.0f);
-       __m256 xi2 = _mm256_set1_ps(1.0f);
+        for (unsigned int i = 0; i < 8; ++i) {
+            array_rnd[i] = genRand(&r);
+            array_rnd2[i] = genRand(&r);
+        }
+
+        __m256 xi1 = _mm256_set_ps(2.0f * array_rnd[0] - 1.0f,
+                                   2.0f * array_rnd[1] - 1.0f,
+                                   2.0f * array_rnd[2] - 1.0f,
+                                   2.0f * array_rnd[3] - 1.0f,
+                                   2.0f * array_rnd[4] - 1.0f,
+                                   2.0f * array_rnd[5] - 1.0f,
+                                   2.0f * array_rnd[6] - 1.0f,
+                                   2.0f * array_rnd[7] - 1.0f);
+
+        __m256 xi2 = _mm256_set_ps(2.0f * array_rnd2[0] - 1.0f,
+                                   2.0f * array_rnd2[1] - 1.0f,
+                                   2.0f * array_rnd2[2] - 1.0f,
+                                   2.0f * array_rnd2[3] - 1.0f,
+                                   2.0f * array_rnd2[4] - 1.0f,
+                                   2.0f * array_rnd2[5] - 1.0f,
+                                   2.0f * array_rnd2[6] - 1.0f,
+                                   2.0f * array_rnd2[7] - 1.0f);
+
+        t = _mm256_add_ps(_mm256_mul_ps(xi1, xi1), _mm256_mul_ps(xi2, xi2));
+
+        do {
+
+            for (unsigned int i = 0; i < 8; ++i) {
+                array_rnd[i] = genRand(&r);
+                array_rnd2[i] = genRand(&r);
+            }
+
+            xi1 = _mm256_set_ps(2.0f * array_rnd[0] - 1.0f,
+                                2.0f * array_rnd[1] - 1.0f,
+                                2.0f * array_rnd[2] - 1.0f,
+                                2.0f * array_rnd[3] - 1.0f,
+                                2.0f * array_rnd[4] - 1.0f,
+                                2.0f * array_rnd[5] - 1.0f,
+                                2.0f * array_rnd[6] - 1.0f,
+                                2.0f * array_rnd[7] - 1.0f);
+
+            xi2 = _mm256_set_ps(2.0f * array_rnd2[0] - 1.0f,
+                                2.0f * array_rnd2[1] - 1.0f,
+                                2.0f * array_rnd2[2] - 1.0f,
+                                2.0f * array_rnd2[3] - 1.0f,
+                                2.0f * array_rnd2[4] - 1.0f,
+                                2.0f * array_rnd2[5] - 1.0f,
+                                2.0f * array_rnd2[6] - 1.0f,
+                                2.0f * array_rnd2[7] - 1.0f);
+
+            // 1 ==_CMP_LT_OS == <
+            vec_mask = _mm256_cmp_ps(t, ones_vector, 1);
+
+            t = _mm256_blendv_ps(_mm256_add_ps(_mm256_mul_ps(xi1, xi1), _mm256_mul_ps(xi2, xi2)), t, vec_mask);
+        } while (!mask_complete(vec_mask));
+        assert(check_t_correct(t));
+
 
         /*
         u = 2.0f * t - 1.0f;
@@ -158,15 +239,15 @@ static void photon(MTRand r)
         // Aux vector.
         __m256 twos_vector = _mm256_set1_ps(2.0f);
 
-        __m256 u = _mm256_sub_ps (_mm256_mul_ps(twos_vector,t),ones_vector);
+        __m256 u = _mm256_sub_ps(_mm256_mul_ps(twos_vector, t), ones_vector);
 
-        __m256 root = _mm256_sqrt_ps(_mm256_mul_ps(_mm256_sub_ps(ones_vector,_mm256_mul_ps(u,u)),_mm256_div_ps(ones_vector,t)));
+        __m256 root = _mm256_sqrt_ps(_mm256_mul_ps(_mm256_sub_ps(ones_vector, _mm256_mul_ps(u, u)), _mm256_div_ps(ones_vector, t)));
 
-        __m256 v = _mm256_mul_ps(xi1,root);
-            
-        __m256 w = _mm256_mul_ps(xi2,root);
+        __m256 v = _mm256_mul_ps(xi1, root);
 
-        
+        __m256 w = _mm256_mul_ps(xi2, root);
+
+
         /*
         if (weight < 0.001f) { 
             if ((float)genRand(&r) > 0.1f) {
@@ -175,35 +256,32 @@ static void photon(MTRand r)
             weight *= 10.0f;
         }
         */
-       
-       // Vector de 0.001s.
-       __m256 little_vector = _mm256_set1_ps(0.001f);
 
-       // Resultado de comparar si "weight" es menor a 0.001.
-       __m256 ifResult1 = _mm256_cmp_ps(weight,little_vector,_CMP_LT_OS);
+        // Vector de 0.001s.
+        __m256 little_vector = _mm256_set1_ps(0.001f);
 
-       // Random vector.
-       float array_rnd2[8];
+        // Resultado de comparar si "weight" es menor a 0.001.
+        __m256 ifResult1 = _mm256_cmp_ps(weight, little_vector, _CMP_LT_OS);
 
-       for (unsigned int i = 0; i < 8; ++i) {
+
+        for (unsigned int i = 0; i < 8; ++i) {
             array_rnd2[i] = (float)genRand(&r);
         }
 
         __m256 Rdm = _mm256_set_ps(-logf(array_rnd2[0]),
-                                 -logf(array_rnd2[1]),
-                                 -logf(array_rnd2[2]),
-                                 -logf(array_rnd2[3]),
-                                 -logf(array_rnd2[4]),
-                                 -logf(array_rnd2[5]),
-                                 -logf(array_rnd2[6]),
-                                 -logf(array_rnd2[7]));
+                                   -logf(array_rnd2[1]),
+                                   -logf(array_rnd2[2]),
+                                   -logf(array_rnd2[3]),
+                                   -logf(array_rnd2[4]),
+                                   -logf(array_rnd2[5]),
+                                   -logf(array_rnd2[6]),
+                                   -logf(array_rnd2[7]));
 
         // Vector de 0.1s.
         __m256 not_that_little_vector = _mm256_set1_ps(0.1f);
 
         // Resultado de comparar si "Rdm" es mayor a 0.1.
-        __m256 ifResult2 = _mm256_cmp_ps(Rdm,not_that_little_vector,_CMP_GT_OS);
-        
+        __m256 ifResult2 = _mm256_cmp_ps(Rdm, not_that_little_vector, _CMP_GT_OS);
     }
 }
 
