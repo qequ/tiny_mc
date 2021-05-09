@@ -50,6 +50,14 @@ unsigned int check_t_correct(__m256 t)
     return 1;
 }
 
+void print_vector(__m256 v)
+{
+    for (unsigned int i = 0; i < 8; ++i) {
+        printf("%f ", v[i]);
+    }
+    printf("\n");
+}
+
 
 /***
  * Photon
@@ -103,6 +111,7 @@ static void photon(MTRand r)
     int exit = 0;
 
     // Ciclo while que deja de iterar cuando todos los todos los fotones valen 0 y hace que exit valga distinto que 0.
+
     while (exit == 0) {
 
         // Criterio de salida del While
@@ -145,7 +154,7 @@ static void photon(MTRand r)
         //unsigned int shell = sqrtf(x * x + y * y + z * z) * shells_per_mfp;
 
         /* absorb */
-        __m256i shell_vector = _mm256_cvtps_epi32(_mm256_mul_ps(_mm256_sqrt_ps(sum_cord), shells_per_mfp));
+        __m256i volatile shell_vector = _mm256_cvtps_epi32(_mm256_mul_ps(_mm256_sqrt_ps(sum_cord), shells_per_mfp));
         __m256i max_shell_vector = _mm256_set1_epi32(SHELLS - 1);
 
         /*
@@ -165,12 +174,11 @@ static void photon(MTRand r)
         __m256 helper_vector_squared = _mm256_mul_ps(helper_vector, helper_vector); /* add up squares */
 
         for (unsigned int i = 0; i < 8; ++i) {
-            heat[shell_vector[i]] += helper_vector[i];
-            heat2[shell_vector[i]] += helper_vector_squared[i];
+            heat[(unsigned int)shell_vector[i]] += (float)helper_vector[i];
+            heat2[(unsigned int)shell_vector[i]] += (float)helper_vector_squared[i];
         }
 
         weight = _mm256_mul_ps(weight, albedo);
-
 
         /* New direction, rejection method */
         //float xi1, xi2;
@@ -333,7 +341,7 @@ int main(void)
     // start timer
     double start = wtime();
     // simulation
-    for (unsigned int i = 0; i < PHOTONS; ++i) {
+    for (unsigned int i = 0; i < 8 * PHOTONS; i+=8) {
         photon(r);
     }
     // stop timer
