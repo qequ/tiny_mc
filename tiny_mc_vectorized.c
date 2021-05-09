@@ -98,7 +98,14 @@ static void photon(MTRand r)
     __m256 w = ones_vector;
     __m256 weight = ones_vector;
 
-    for (;;) {
+    // Criterio de salida del While
+    int exit = 0;
+
+    // Ciclo while que deja de iterar cuando todos los todos los fotones valen 0 y hace que exit valga distinto que 0.
+    while (exit == 0) {
+
+        // Criterio de salida del While
+        exit = 0;
 
         for (unsigned int i = 0; i < 8; ++i) {
             array_rnd[i] = (float)genRand(&r);
@@ -279,7 +286,7 @@ static void photon(MTRand r)
         // Resultado de comparar si "Rdm" es mayor a 0.1.
         __m256 ifResult2 = _mm256_cmp_ps(Rdm, not_that_little_vector, _CMP_GT_OS);
 
-        // _mm256_blendv_ps(else,then,resultado del if)
+        // Ruleta.
         weight = _mm256_blendv_ps(weight,_mm256_blendv_ps(_mm256_mul_ps(tens_vector,weight),zeros_vector,ifResult2),ifResult1);
         x = _mm256_blendv_ps(x,_mm256_blendv_ps(x,zeros_vector,ifResult2),ifResult1);
         y = _mm256_blendv_ps(y,_mm256_blendv_ps(y,zeros_vector,ifResult2),ifResult1);
@@ -288,6 +295,19 @@ static void photon(MTRand r)
         v = _mm256_blendv_ps(v,_mm256_blendv_ps(v,zeros_vector,ifResult2),ifResult1);
         w = _mm256_blendv_ps(w,_mm256_blendv_ps(w,zeros_vector,ifResult2),ifResult1);
 
+        // Chequeo para saber si salir del While
+
+        if (zeros_vector[0]==x[0] &&
+            zeros_vector[1]==x[1] &&
+            zeros_vector[2]==x[2] &&
+            zeros_vector[3]==x[3] &&
+            zeros_vector[4]==x[4] &&
+            zeros_vector[5]==x[5] &&
+            zeros_vector[6]==x[6] &&
+            zeros_vector[7]==x[7])
+        {
+            exit = 1;
+        }
     }
 }
 
