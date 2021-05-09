@@ -90,13 +90,14 @@ static void photon(MTRand r)
     __m256 not_that_little_vector = _mm256_set1_ps(0.1f);
     
     // seteando todos los vectores con el valor dado
-    __m256 x = zeros_vector;
-    __m256 y = zeros_vector;
-    __m256 z = zeros_vector;
-    __m256 u = zeros_vector;
-    __m256 v = zeros_vector;
-    __m256 w = ones_vector;
-    __m256 weight = ones_vector;
+    __m256 x = _mm256_set1_ps(0.0f);
+    __m256 y = _mm256_set1_ps(0.0f);
+    __m256 z = _mm256_set1_ps(0.0f);
+    __m256 u = _mm256_set1_ps(0.0f);
+    __m256 v = _mm256_set1_ps(0.0f);
+    __m256 w = _mm256_set1_ps(1.0f);
+    __m256 weight = _mm256_set1_ps(1.0f);
+
 
     // Criterio de salida del While
     int exit = 0;
