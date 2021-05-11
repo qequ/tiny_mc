@@ -135,7 +135,7 @@ static void photon(MTRand r)
         x = _mm256_fmadd_ps(t, u, x);
         y = _mm256_fmadd_ps(t, v, y);
         z = _mm256_fmadd_ps(t, w, z);
-        print_vector(x);
+        //print_vector(x);
 
         // cuadrados de números
         __m256 x_squared = _mm256_mul_ps(x, x);
@@ -166,11 +166,13 @@ static void photon(MTRand r)
         __m256 helper_vector = _mm256_mul_ps(_mm256_sub_ps(ones_vector, albedo), weight);
         __m256 helper_vector_squared = _mm256_mul_ps(helper_vector, helper_vector); /* add up squares */
 
+        //TODO: FIX THIS CODE
+        /*
         for (unsigned int i = 0; i < 8; ++i) {
             heat[(unsigned int)shell_vector[i]] += (float)helper_vector[i];
             heat2[(unsigned int)shell_vector[i]] += (float)helper_vector_squared[i];
         }
-
+        */
         weight = _mm256_mul_ps(weight, albedo);
 
         /* New direction, rejection method */
@@ -308,7 +310,7 @@ static void photon(MTRand r)
         weight = _mm256_blendv_ps(weight, _mm256_blendv_ps(weight, ones_vector, weight_mask), roulette_mask);
 
         for (unsigned int i = 0; i < 8; ++i) {
-            if (roulette_mask[i]) {
+            if (roulette_mask[i] && weight_mask[i]) {
                 photon_count++;
             }
         }
