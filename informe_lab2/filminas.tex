@@ -1,0 +1,54 @@
+\documentclass{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx} 
+
+
+%Information to be included in the title page:
+\title{Laboratorio 2}
+\author{Alvaro Frias Garay - Ary Lautaro Di Bartolo}
+\institute{Universidad Nacional de Córdoba - Universidad Nacional de Cuyo}
+\date{2021}
+
+
+
+\begin{document}
+
+\frame{\titlepage}
+
+
+\begin{frame}
+    \frametitle{Autovectorización}
+    gcc -O1 -ftree-vectorize -fopt-info-vec 
+    -fopt-info-vec-missed wtime.c mtwister.c tiny\_mc.c -lm
+
+\end{frame}
+
+\begin{frame}
+    \frametitle{Autovectorización}
+    \begin{itemize}
+        \item<1-> tiny\_mc.c:107:5: missed: couldn't vectorize loop
+        \item<2-> tiny\_mc.c:107:5: missed: not vectorized: multiple nested loops.
+        \\\pause
+
+        \item <3-> tiny\_mc.c:78:16: missed: couldn't vectorize loop
+        \item <4-> tiny\_mc.c:78:16: missed: not vectorized: control flow in loop.
+        \\\pause
+        \item <5->tiny\_mc.c:71:9: missed: couldn't vectorize loop
+        \item <6->tiny\_mc.c:71:9: missed: not vectorized: number of iterations cannot be computed.
+        \\\pause
+    \end{itemize}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Autovectorización}
+
+    \includegraphics[width=4in]{imagenes/autovector_f1.png} \pause
+    \includegraphics[width=4in]{imagenes/autovector_f2.png} \pause
+    \includegraphics[width=4in]{imagenes/autovector_f3.png} 
+
+\end{frame}
+
+
+
+\end{document}
