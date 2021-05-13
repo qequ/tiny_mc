@@ -167,17 +167,17 @@ static void photon(MTRand r)
         __m256 helper_vector = _mm256_mul_ps(_mm256_sub_ps(ones_vector, albedo), weight);
         __m256 helper_vector_squared = _mm256_mul_ps(helper_vector, helper_vector); /* add up squares */
 
-        index_array[0]= _mm256_extract_epi32(shell_vector, 0);
-        index_array[1]= _mm256_extract_epi32(shell_vector, 1);
-        index_array[2]= _mm256_extract_epi32(shell_vector, 2);
-        index_array[3]= _mm256_extract_epi32(shell_vector, 3);
-        index_array[4]= _mm256_extract_epi32(shell_vector, 4);
-        index_array[5]= _mm256_extract_epi32(shell_vector, 5);
-        index_array[6]= _mm256_extract_epi32(shell_vector, 6);
-        index_array[7]= _mm256_extract_epi32(shell_vector, 7);
+        index_array[0] = _mm256_extract_epi32(shell_vector, 0);
+        index_array[1] = _mm256_extract_epi32(shell_vector, 1);
+        index_array[2] = _mm256_extract_epi32(shell_vector, 2);
+        index_array[3] = _mm256_extract_epi32(shell_vector, 3);
+        index_array[4] = _mm256_extract_epi32(shell_vector, 4);
+        index_array[5] = _mm256_extract_epi32(shell_vector, 5);
+        index_array[6] = _mm256_extract_epi32(shell_vector, 6);
+        index_array[7] = _mm256_extract_epi32(shell_vector, 7);
 
 
-        for (unsigned int i = 0; i < 8; ++i){
+        for (unsigned int i = 0; i < 8; ++i) {
             heat[index_array[i]] += (float)helper_vector[i];
             heat2[index_array[i]] += (float)helper_vector_squared[i];
         }
@@ -360,11 +360,19 @@ int main(void)
     assert(start <= end);
     double elapsed = end - start;
 
+    FILE* fptr = fopen("photons_results.txt", "a");
+    if (fptr == NULL) {
+        exit(EXIT_FAILURE);
+    }
+    fprintf(fptr, "%lf\n", 1e-3 * PHOTONS / elapsed);
 
+    fclose(fptr);
+
+    /*
     printf("# %lf seconds\n", elapsed);
     printf("# %lf K photons per second\n", 1e-3 * PHOTONS / elapsed);
 
-    //
+    
     printf("%lf\n", 1e-3 * PHOTONS / elapsed);
 
 
@@ -377,6 +385,7 @@ int main(void)
                sqrt(heat2[i] - heat[i] * heat[i] / PHOTONS) / t / (i * i + i + 1.0f / 3.0f));
     }
     printf("# extra\t%12.5f\n", heat[SHELLS - 1] / PHOTONS);
+    */
 
     return 0;
 }

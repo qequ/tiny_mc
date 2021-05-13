@@ -5,7 +5,7 @@ CC = gcc
 EXTRA_CFLAGS=
 CFLAGS = -std=c11 -Wall -Wextra $(EXTRA_CFLAGS)
 LDFLAGS = -lm
-CFLAGS_VECTOR = -O3 -march=native
+CFLAGS_VECTOR = -O3 -march=native $(EXTRA_CFLAGS)
 # Binary file
 TARGET = tiny_mc
 
