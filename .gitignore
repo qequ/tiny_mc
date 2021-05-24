@@ -4,3 +4,4 @@ tiny_mc
 __pycache__
 means.txt
 tiny_mc_vectorized
+tiny_mc_omp
