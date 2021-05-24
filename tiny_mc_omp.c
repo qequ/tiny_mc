@@ -13,9 +13,9 @@
 
 #include <assert.h>
 #include <math.h>
+#include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <omp.h>
 
 char t1[] = "Tiny Monte Carlo by Scott Prahl (http://omlc.ogi.edu)";
 char t2[] = "1 W Point Source Heating in Infinite Isotropic Scattering Medium";
@@ -46,43 +46,57 @@ static void photon(MTRand r)
     float w = 1.0f;
     float weight = 1.0f;
 
-    for (;;) {
-        float t = -logf((float)genRand(&r)); /* move */
-        x += t * u;
-        y += t * v;
-        z += t * w;
+    float heat_pr[SHELLS];
+    float heat2_pr[SHELLS];
 
-        unsigned int shell = sqrtf(x * x + y * y + z * z) * shells_per_mfp; /* absorb */
-        if (shell > SHELLS - 1) {
-            shell = SHELLS - 1;
-        }
-        #pragma omp critical
-        heat[shell] += (1.0f - albedo) * weight;
-        #pragma omp critical
-        heat2[shell] += (1.0f - albedo) * (1.0f - albedo) * weight * weight; /* add up squares */
+    #pragma omp parallel for schedule(dynamic) private(heat_pr, heat2_pr, x, y, z, u, v, w, weight)
+    for (unsigned int i = 0; i < PHOTONS; ++i) {
 
-        weight *= albedo;
 
-        /* New direction, rejection method */
-        float xi1, xi2;
-        
-        do {
-            
-            xi1 = 2.0f * genRand(&r) - 1.0f;
-            xi2 = 2.0f * genRand(&r) - 1.0f;
-            t = xi1 * xi1 + xi2 * xi2;
-            
-        } while (1.0f < t);
+        for (;;) {
+            float t = -logf((float)genRand(&r)); /* move */
+            x += t * u;
+            y += t * v;
+            z += t * w;
 
-        u = 2.0f * t - 1.0f;
-        v = xi1 * sqrtf((1.0f - u * u) * (1.0f / t));
-        w = xi2 * sqrtf((1.0f - u * u) * (1.0f / t));
-
-        if (weight < 0.001f) { /* roulette */
-            if ((float)genRand(&r) > 0.1f) {
-                break;
+            unsigned int shell = sqrtf(x * x + y * y + z * z) * shells_per_mfp; /* absorb */
+            if (shell > SHELLS - 1) {
+                shell = SHELLS - 1;
             }
-            weight *= 10.0f;
+            heat_pr[shell] += (1.0f - albedo) * weight;
+            heat2_pr[shell] += (1.0f - albedo) * (1.0f - albedo) * weight * weight; /* add up squares */
+
+            weight *= albedo;
+
+            /* New direction, rejection method */
+            float xi1, xi2;
+
+            do {
+
+                xi1 = 2.0f * genRand(&r) - 1.0f;
+                xi2 = 2.0f * genRand(&r) - 1.0f;
+                t = xi1 * xi1 + xi2 * xi2;
+
+            } while (1.0f < t);
+
+            u = 2.0f * t - 1.0f;
+            v = xi1 * sqrtf((1.0f - u * u) * (1.0f / t));
+            w = xi2 * sqrtf((1.0f - u * u) * (1.0f / t));
+
+            if (weight < 0.001f) { /* roulette */
+                if ((float)genRand(&r) > 0.1f) {
+                    // cargando a los shared heats a partir de los privados
+                    #pragma omp critical
+                    {
+                        for (int n = 0; n < SHELLS; ++n) {
+                            heat[n] += heat_pr[n];
+                            heat2[n] += heat2_pr[n];
+                        }
+                    }
+                    break;
+                }
+                weight *= 10.0f;
+            }
         }
     }
 }
@@ -108,23 +122,20 @@ int main(void)
     // start timer
     double start = wtime();
     // simulation
-    #pragma omp parallel for
-    for (unsigned int i = 0; i < PHOTONS; ++i) {
-        photon(r);
-    }
+    photon(r);
     // stop timer
     double end = wtime();
     assert(start <= end);
     double elapsed = end - start;
 
-    
+    printf("%lf\n", 1e-3 * PHOTONS / elapsed);
+    /*
     printf("# %lf seconds\n", elapsed);
     printf("# %lf K photons per second\n", 1e-3 * PHOTONS / elapsed);
-    
-    //
-    //printf("%lf\n", 1e-3 * PHOTONS / elapsed);
 
     
+
+
     printf("# Radius\tHeat\n");
     printf("# [microns]\t[W/cm^3]\tError\n");
     float t = 4.0f * M_PI * powf(MICRONS_PER_SHELL, 3.0f) * PHOTONS / 1e12;
@@ -134,6 +145,6 @@ int main(void)
                sqrt(heat2[i] - heat[i] * heat[i] / PHOTONS) / t / (i * i + i + 1.0f / 3.0f));
     }
     printf("# extra\t%12.5f\n", heat[SHELLS - 1] / PHOTONS);
-    
+*/
     return 0;
 }
