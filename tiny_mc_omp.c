@@ -129,7 +129,15 @@ int main(void)
     assert(start <= end);
     double elapsed = end - start;
 
-    printf("%lf\n", 1e-3 * PHOTONS / elapsed);
+    FILE* fptr = fopen("photons_results.txt", "a");
+    if (fptr == NULL) {
+        exit(EXIT_FAILURE);
+    }
+    fprintf(fptr, "%lf\n", 1e-3 * PHOTONS / elapsed);
+
+    fclose(fptr);
+
+
     /*
     printf("# %lf seconds\n", elapsed);
     printf("# %lf K photons per second\n", 1e-3 * PHOTONS / elapsed);
