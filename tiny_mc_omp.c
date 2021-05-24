@@ -38,6 +38,9 @@ static void photon(MTRand r)
     const float shells_per_mfp = 1e4 * (1.0f / MICRONS_PER_SHELL) * (1.0f / (MU_A + MU_S));
 
     /* launch */
+    float xi1, xi2;
+    float t;
+    unsigned int shell;
     float x = 0.0f;
     float y = 0.0f;
     float z = 0.0f;
@@ -49,17 +52,16 @@ static void photon(MTRand r)
     float heat_pr[SHELLS];
     float heat2_pr[SHELLS];
 
-    #pragma omp parallel for schedule(dynamic) private(heat_pr, heat2_pr, x, y, z, u, v, w, weight)
+    #pragma omp parallel for schedule(dynamic) private(heat_pr, heat2_pr, x, y, z, u, v, w, t, xi1, xi2, shell, weight)
     for (unsigned int i = 0; i < PHOTONS; ++i) {
 
-
         for (;;) {
-            float t = -logf((float)genRand(&r)); /* move */
+            t = -logf((float)genRand(&r)); /* move */
             x += t * u;
             y += t * v;
             z += t * w;
 
-            unsigned int shell = sqrtf(x * x + y * y + z * z) * shells_per_mfp; /* absorb */
+            shell = sqrtf(x * x + y * y + z * z) * shells_per_mfp; /* absorb */
             if (shell > SHELLS - 1) {
                 shell = SHELLS - 1;
             }
@@ -69,7 +71,6 @@ static void photon(MTRand r)
             weight *= albedo;
 
             /* New direction, rejection method */
-            float xi1, xi2;
 
             do {
 
