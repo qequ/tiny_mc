@@ -65,10 +65,7 @@ void print_vector(__m256 v)
 
 static void photon(MTRand r)
 {
-    /*
-    const float albedo = MU_S * (1.0f / (MU_S + MU_A));
-    const float shells_per_mfp = 1e4 * (1.0f / MICRONS_PER_SHELL) * (1.0f / (MU_A + MU_S));
-    */
+    
     const __m256 albedo = _mm256_set1_ps(MU_S * (1.0f / (MU_S + MU_A)));
     const __m256 shells_per_mfp = _mm256_set1_ps(1e4 * (1.0f / MICRONS_PER_SHELL) * (1.0f / (MU_A + MU_S)));
 
@@ -76,19 +73,10 @@ static void photon(MTRand r)
     // Random arrays.
     float array_rnd[8];
     float array_rnd2[8];
-    int32_t index_array[9];
+    float index_array[8];
 
     /* launch */
 
-    /*
-    float x = 0.0f;
-    float y = 0.0f;
-    float z = 0.0f;
-    float u = 0.0f;
-    float v = 0.0f;
-    float w = 1.0f;
-    float weight = 1.0f;
-    */
 
     // helper vectors
     const __m256 zeros_vector = _mm256_set1_ps(0.0f);
@@ -112,31 +100,19 @@ static void photon(MTRand r)
     while (photon_count < PHOTONS) {
 
         for (unsigned int i = 0; i < 8; ++i) {
-            array_rnd[i] = (float)genRand(&r);
+            array_rnd[i] = -logf((float)genRand(&r));
         }
 
         /* move */
 
         //float t = -logf((float)genRand(&r));
-        __m256 t = _mm256_set_ps(-logf(array_rnd[0]),
-                                 -logf(array_rnd[1]),
-                                 -logf(array_rnd[2]),
-                                 -logf(array_rnd[3]),
-                                 -logf(array_rnd[4]),
-                                 -logf(array_rnd[5]),
-                                 -logf(array_rnd[6]),
-                                 -logf(array_rnd[7]));
-        /*
-        x += t * u;
-        y += t * v;
-        z += t * w;
-        */
+        __m256 t = _mm256_load_ps(array_rnd);
+
 
         // fmadd_ps(a, b, c) == (a * b) + c
         x = _mm256_fmadd_ps(t, u, x);
         y = _mm256_fmadd_ps(t, v, y);
         z = _mm256_fmadd_ps(t, w, z);
-        //print_vector(x);
 
         // cuadrados de números
         __m256 x_squared = _mm256_mul_ps(x, x);
@@ -145,129 +121,57 @@ static void photon(MTRand r)
 
         __m256 sum_cord = _mm256_add_ps(_mm256_add_ps(x_squared, y_squared), z_squared);
 
-        //unsigned int shell = sqrtf(x * x + y * y + z * z) * shells_per_mfp;
 
         /* absorb */
-        __m256i shell_vector = _mm256_cvtps_epi32(_mm256_mul_ps(_mm256_sqrt_ps(sum_cord), shells_per_mfp));
-        __m256i max_shell_vector = _mm256_set1_epi32(SHELLS - 1);
+        __m256 shell_vector = _mm256_mul_ps(_mm256_sqrt_ps(sum_cord), shells_per_mfp);
+        __m256 max_shell_vector = _mm256_set1_ps(SHELLS - 1);
 
-        /*
-        if (shell > SHELLS - 1) {
-            shell = SHELLS - 1;
-        }
-        */
-        shell_vector = _mm256_min_epi32(shell_vector, max_shell_vector);
+        shell_vector = _mm256_min_ps(shell_vector, max_shell_vector);
 
 
-        /*
-        heat[shell] += (1.0f - albedo) * weight;
-        heat2[shell] += (1.0f - albedo) * (1.0f - albedo) * weight * weight;  
-        weight *= albedo;
-        */
         __m256 helper_vector = _mm256_mul_ps(_mm256_sub_ps(ones_vector, albedo), weight);
         __m256 helper_vector_squared = _mm256_mul_ps(helper_vector, helper_vector); /* add up squares */
 
-        index_array[0] = _mm256_extract_epi32(shell_vector, 0);
-        index_array[1] = _mm256_extract_epi32(shell_vector, 1);
-        index_array[2] = _mm256_extract_epi32(shell_vector, 2);
-        index_array[3] = _mm256_extract_epi32(shell_vector, 3);
-        index_array[4] = _mm256_extract_epi32(shell_vector, 4);
-        index_array[5] = _mm256_extract_epi32(shell_vector, 5);
-        index_array[6] = _mm256_extract_epi32(shell_vector, 6);
-        index_array[7] = _mm256_extract_epi32(shell_vector, 7);
-
+       _mm256_store_ps(index_array, shell_vector);
 
         for (unsigned int i = 0; i < 8; ++i) {
-            heat[index_array[i]] += (float)helper_vector[i];
-            heat2[index_array[i]] += (float)helper_vector_squared[i];
+            heat[(unsigned int)index_array[i]] += (float)helper_vector[i];
+            heat2[(unsigned int)index_array[i]] += (float)helper_vector_squared[i];
         }
 
-        /*
-        for (unsigned int i = 0; i < 8; ++i) {
-            heat[(unsigned int)shell_vector[i]] += (float)helper_vector[i];
-            heat2[(unsigned int)shell_vector[i]] += (float)helper_vector_squared[i];
-        }
-        */
         weight = _mm256_mul_ps(weight, albedo);
 
-        /* New direction, rejection method */
-        //float xi1, xi2;
-
-        /*
-        do {
-
-            xi1 = 2.0f * genRand(&r) - 1.0f;
-            xi2 = 2.0f * genRand(&r) - 1.0f;
-            t = xi1 * xi1 + xi2 * xi2;
-
-        } while (1.0f < t);
-        */
 
         __m256 vec_mask = _mm256_set1_ps(0.0f);
 
         for (unsigned int i = 0; i < 8; ++i) {
-            array_rnd[i] = genRand(&r);
-            array_rnd2[i] = genRand(&r);
+            array_rnd[i] = 2.0f * (float)genRand(&r) - 1.0f;
+            array_rnd2[i] = 2.0f * (float)genRand(&r) - 1.0f;
         }
+        __m256 xi1 = _mm256_load_ps(array_rnd);
+        __m256 xi2 = _mm256_load_ps(array_rnd2);
 
-        __m256 xi1 = _mm256_set_ps(2.0f * array_rnd[0] - 1.0f,
-                                   2.0f * array_rnd[1] - 1.0f,
-                                   2.0f * array_rnd[2] - 1.0f,
-                                   2.0f * array_rnd[3] - 1.0f,
-                                   2.0f * array_rnd[4] - 1.0f,
-                                   2.0f * array_rnd[5] - 1.0f,
-                                   2.0f * array_rnd[6] - 1.0f,
-                                   2.0f * array_rnd[7] - 1.0f);
-
-        __m256 xi2 = _mm256_set_ps(2.0f * array_rnd2[0] - 1.0f,
-                                   2.0f * array_rnd2[1] - 1.0f,
-                                   2.0f * array_rnd2[2] - 1.0f,
-                                   2.0f * array_rnd2[3] - 1.0f,
-                                   2.0f * array_rnd2[4] - 1.0f,
-                                   2.0f * array_rnd2[5] - 1.0f,
-                                   2.0f * array_rnd2[6] - 1.0f,
-                                   2.0f * array_rnd2[7] - 1.0f);
 
         t = _mm256_add_ps(_mm256_mul_ps(xi1, xi1), _mm256_mul_ps(xi2, xi2));
-
+        int mask_int;
         do {
 
+
             for (unsigned int i = 0; i < 8; ++i) {
-                array_rnd[i] = genRand(&r);
-                array_rnd2[i] = genRand(&r);
+                array_rnd[i] = 2.0f * (float)genRand(&r) - 1.0f;
+                array_rnd2[i] = 2.0f * (float)genRand(&r) - 1.0f;
             }
-
-            xi1 = _mm256_set_ps(2.0f * array_rnd[0] - 1.0f,
-                                2.0f * array_rnd[1] - 1.0f,
-                                2.0f * array_rnd[2] - 1.0f,
-                                2.0f * array_rnd[3] - 1.0f,
-                                2.0f * array_rnd[4] - 1.0f,
-                                2.0f * array_rnd[5] - 1.0f,
-                                2.0f * array_rnd[6] - 1.0f,
-                                2.0f * array_rnd[7] - 1.0f);
-
-            xi2 = _mm256_set_ps(2.0f * array_rnd2[0] - 1.0f,
-                                2.0f * array_rnd2[1] - 1.0f,
-                                2.0f * array_rnd2[2] - 1.0f,
-                                2.0f * array_rnd2[3] - 1.0f,
-                                2.0f * array_rnd2[4] - 1.0f,
-                                2.0f * array_rnd2[5] - 1.0f,
-                                2.0f * array_rnd2[6] - 1.0f,
-                                2.0f * array_rnd2[7] - 1.0f);
+            __m256 xi1 = _mm256_load_ps(array_rnd);
+            __m256 xi2 = _mm256_load_ps(array_rnd2);
 
             // 1 ==_CMP_LT_OS == <
             vec_mask = _mm256_cmp_ps(t, ones_vector, 1);
+            mask_int = _mm256_movemask_ps(vec_mask);
 
             t = _mm256_blendv_ps(_mm256_add_ps(_mm256_mul_ps(xi1, xi1), _mm256_mul_ps(xi2, xi2)), t, vec_mask);
-        } while (!mask_complete(vec_mask));
+        } while (mask_int != 0xFF);
         assert(check_t_correct(t));
 
-
-        /*
-        u = 2.0f * t - 1.0f;
-        v = xi1 * sqrtf((1.0f - u * u) * (1.0f / t));
-        w = xi2 * sqrtf((1.0f - u * u) * (1.0f / t));
-        */
 
         // _mm256_fmsub_ps(a, b, c) == (a * b) - c
         __m256 u = _mm256_fmsub_ps(twos_vector, t, ones_vector);
@@ -278,14 +182,6 @@ static void photon(MTRand r)
 
         __m256 w = _mm256_mul_ps(xi2, root);
 
-        /*
-        if (weight < 0.001f) { 
-            if ((float)genRand(&r) > 0.1f) {
-                break;
-            }
-            weight *= 10.0f;
-        }
-        */
 
         // weight < 0.001f
         __m256 weight_mask = _mm256_cmp_ps(weight, l_vector, _CMP_LT_OS);
@@ -295,26 +191,10 @@ static void photon(MTRand r)
         for (unsigned int i = 0; i < 8; ++i) {
             array_rnd[i] = genRand(&r);
         }
-        __m256 rand_vec = _mm256_set_ps(array_rnd[0],
-                                        array_rnd[1],
-                                        array_rnd[2],
-                                        array_rnd[3],
-                                        array_rnd[4],
-                                        array_rnd[5],
-                                        array_rnd[6],
-                                        array_rnd[7]);
+        __m256 rand_vec = _mm256_load_ps(array_rnd);
 
         __m256 roulette_mask = _mm256_cmp_ps(rand_vec, tl_vector, _CMP_GT_OS);
 
-        /*
-    __m256 x = _mm256_set1_ps(0.0f);
-    __m256 y = _mm256_set1_ps(0.0f);
-    __m256 z = _mm256_set1_ps(0.0f);
-    __m256 u = _mm256_set1_ps(0.0f);
-    __m256 v = _mm256_set1_ps(0.0f);
-    __m256 w = _mm256_set1_ps(1.0f);
-    __m256 weight = _mm256_set1_ps(1.0f);
-        */
 
         x = _mm256_blendv_ps(x, _mm256_blendv_ps(x, zeros_vector, weight_mask), roulette_mask);
         y = _mm256_blendv_ps(y, _mm256_blendv_ps(y, zeros_vector, weight_mask), roulette_mask);
