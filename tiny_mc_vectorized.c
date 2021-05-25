@@ -29,16 +29,6 @@ static float heat2[SHELLS];
 
 
 // useful for checking if a vector mask has its 8 elements equal to 0xFFFFFFFF
-unsigned int mask_complete(__m256 vec_mask)
-{
-    for (unsigned int i = 0; i < 8; ++i) {
-        if (!vec_mask[i]) {
-            return 0;
-        }
-    }
-    return 1;
-}
-
 
 unsigned int check_t_correct(__m256 t)
 {
@@ -50,13 +40,6 @@ unsigned int check_t_correct(__m256 t)
     return 1;
 }
 
-void print_vector(__m256 v)
-{
-    for (unsigned int i = 0; i < 8; ++i) {
-        printf("%f ", v[i]);
-    }
-    printf("\n");
-}
 
 
 /***
