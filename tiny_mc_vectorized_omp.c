@@ -12,8 +12,8 @@
 #include "wtime.h"
 
 #include <assert.h>
-#include <immintrin.h>
 #include <math.h>
+#include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -26,12 +26,19 @@ char t3[] = "CPU version, adapted for PEAGPGPU by Gustavo Castellano"
 // global state, heat and heat square in each shell
 static float heat[SHELLS];
 static float heat2[SHELLS];
+unsigned int photon_count = 0;
 
-
-// useful for checking if a vector mask has its 8 elements equal to 0xFFFFFFFF
-
-unsigned int check_t_correct(__m256 t)
+int check_t_greater_1(float* t)
 {
+    for (unsigned int i = 0; i < 8; ++i) {
+        if (1.0f < t[i]) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int check_t_correct(float * t) {
     for (unsigned int i = 0; i < 8; ++i) {
         if (1.0f < t[i]) {
             return 0;
@@ -47,161 +54,130 @@ unsigned int check_t_correct(__m256 t)
 
 static void photon(MTRand r)
 {
-
-    const __m256 albedo = _mm256_set1_ps(MU_S * (1.0f / (MU_S + MU_A)));
-    const __m256 shells_per_mfp = _mm256_set1_ps(1e4 * (1.0f / MICRONS_PER_SHELL) * (1.0f / (MU_A + MU_S)));
-
-
-    // Random arrays.
-    float array_rnd[8];
-    float array_rnd2[8];
-    float index_array[8];
-
     float heat_pr[SHELLS];
     float heat2_pr[SHELLS];
+    //unsigned int photon_count;
+    float x[8] = { 0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f };
+    float y[8] = { 0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f };
+    float z[8] = { 0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f };
+    float u[8] = { 0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f };
+    float v[8] = { 0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f };
+    float w[8] = {
+        1.0f,
+        1.0f,
+        1.0f,
+        1.0f,
+        1.0f,
+        1.0f,
+        1.0f,
+        1.0f,
+    };
+    float weight[8] = {
+        1.0f,
+        1.0f,
+        1.0f,
+        1.0f,
+        1.0f,
+        1.0f,
+        1.0f,
+        1.0f,
+    };
 
-    /* launch */
+    float t[8];
+    float albedo[8];
+    float shells_per_mfp[8];
+    unsigned int shell[8];
+
+    #pragma omp simd aligned(albedo, shells_per_mfp:32)
+    for (unsigned int i = 0; i < 8; ++i) {
+        albedo[i] = MU_S * (1.0f / (MU_S + MU_A));
+        shells_per_mfp[i] = 1e4 * (1.0f / MICRONS_PER_SHELL) * (1.0f / (MU_A + MU_S));
+    }
 
 
-    // helper vectors
-    __m256 zeros_vector = _mm256_set1_ps(0.0f);
-    __m256 ones_vector = _mm256_set1_ps(1.0f);
-    __m256 twos_vector = _mm256_set1_ps(2.0f);
-    __m256 tens_vector = _mm256_set1_ps(10.0f);
-    __m256 l_vector = _mm256_set1_ps(0.001f);
-    __m256 tl_vector = _mm256_set1_ps(0.1f);
-
-    // seteando todos los vectores con el valor dado
-    __m256 x = _mm256_set1_ps(0.0f);
-    __m256 y = _mm256_set1_ps(0.0f);
-    __m256 z = _mm256_set1_ps(0.0f);
-    __m256 u = _mm256_set1_ps(0.0f);
-    __m256 v = _mm256_set1_ps(0.0f);
-    __m256 w = _mm256_set1_ps(1.0f);
-    __m256 weight = _mm256_set1_ps(1.0f);
-
-    unsigned int photon_count = 0;
-
-#pragma omp parallel private(array_rnd, array_rnd2, index_array, heat_pr, heat2_pr, zeros_vector, ones_vector, twos_vector, l_vector, tl_vector, x, y, z, u, v, w, weight) shared(photon_count)
     while (photon_count < PHOTONS) {
 
+/* launch */
+        #pragma omp simd aligned(t, x, y, z, shell, weight:32)
         for (unsigned int i = 0; i < 8; ++i) {
-            array_rnd[i] = -logf((float)genRand(&r));
-        }
+            t[i] = -logf((float)genRand(&r)); /*move*/
+            x[i] += t[i] * u[i];
+            y[i] += t[i] * v[i];
+            z[i] += t[i] * w[i];
+            shell[i] = (unsigned int)sqrtf(x[i] * x[i] + y[i] * y[i] + z[i] * z[i]) * shells_per_mfp[i]; /*absorb*/
 
-        /* move */
-
-        //float t = -logf((float)genRand(&r));
-        __m256 t = _mm256_load_ps(array_rnd);
-
-
-        // fmadd_ps(a, b, c) == (a * b) + c
-        x = _mm256_fmadd_ps(t, u, x);
-        y = _mm256_fmadd_ps(t, v, y);
-        z = _mm256_fmadd_ps(t, w, z);
-
-        // cuadrados de números
-        __m256 x_squared = _mm256_mul_ps(x, x);
-        __m256 y_squared = _mm256_mul_ps(y, y);
-        __m256 z_squared = _mm256_mul_ps(z, z);
-
-        __m256 sum_cord = _mm256_add_ps(_mm256_add_ps(x_squared, y_squared), z_squared);
-
-
-        /* absorb */
-        __m256 shell_vector = _mm256_mul_ps(_mm256_sqrt_ps(sum_cord), shells_per_mfp);
-        __m256 max_shell_vector = _mm256_set1_ps(SHELLS - 1);
-
-        shell_vector = _mm256_min_ps(shell_vector, max_shell_vector);
-
-
-        __m256 helper_vector = _mm256_mul_ps(_mm256_sub_ps(ones_vector, albedo), weight);
-        __m256 helper_vector_squared = _mm256_mul_ps(helper_vector, helper_vector); /* add up squares */
-
-        _mm256_store_ps(index_array, shell_vector);
-
-        for (unsigned int i = 0; i < 8; ++i) {
-            heat_pr[(unsigned int)index_array[i]] += (float)helper_vector[i];
-            heat2_pr[(unsigned int)index_array[i]] += (float)helper_vector_squared[i];
-        }
-
-        weight = _mm256_mul_ps(weight, albedo);
-
-
-        __m256 vec_mask = _mm256_set1_ps(0.0f);
-
-        for (unsigned int i = 0; i < 8; ++i) {
-            array_rnd[i] = 2.0f * (float)genRand(&r) - 1.0f;
-            array_rnd2[i] = 2.0f * (float)genRand(&r) - 1.0f;
-        }
-        __m256 xi1 = _mm256_load_ps(array_rnd);
-        __m256 xi2 = _mm256_load_ps(array_rnd2);
-
-
-        t = _mm256_add_ps(_mm256_mul_ps(xi1, xi1), _mm256_mul_ps(xi2, xi2));
-        int mask_int;
-        do {
-
-
-            for (unsigned int i = 0; i < 8; ++i) {
-                array_rnd[i] = 2.0f * (float)genRand(&r) - 1.0f;
-                array_rnd2[i] = 2.0f * (float)genRand(&r) - 1.0f;
+            if (shell[i] > SHELLS - 1) {
+                shell[i] = SHELLS - 1;
             }
-            __m256 xi1 = _mm256_load_ps(array_rnd);
-            __m256 xi2 = _mm256_load_ps(array_rnd2);
 
-            // 1 ==_CMP_LT_OS == <
-            vec_mask = _mm256_cmp_ps(t, ones_vector, 1);
-            mask_int = _mm256_movemask_ps(vec_mask);
-
-            t = _mm256_blendv_ps(_mm256_add_ps(_mm256_mul_ps(xi1, xi1), _mm256_mul_ps(xi2, xi2)), t, vec_mask);
-        } while (mask_int != 0xFF);
-        assert(check_t_correct(t));
-
-
-        // _mm256_fmsub_ps(a, b, c) == (a * b) - c
-        __m256 u = _mm256_fmsub_ps(twos_vector, t, ones_vector);
-
-        __m256 root = _mm256_sqrt_ps(_mm256_mul_ps(_mm256_sub_ps(ones_vector, _mm256_mul_ps(u, u)), _mm256_div_ps(ones_vector, t)));
-
-        __m256 v = _mm256_mul_ps(xi1, root);
-
-        __m256 w = _mm256_mul_ps(xi2, root);
-
-
-        // weight < 0.001f
-        __m256 weight_mask = _mm256_cmp_ps(weight, l_vector, _CMP_LT_OS);
-
-        weight = _mm256_blendv_ps(weight, _mm256_mul_ps(weight, tens_vector), weight_mask);
-
-        for (unsigned int i = 0; i < 8; ++i) {
-            array_rnd[i] = genRand(&r);
+            heat_pr[shell[i]] += (1.0f - albedo[i]) * weight[i];
+            heat2_pr[shell[i]] += (1.0f - albedo[i]) * (1.0f - albedo[i]) * weight[i] * weight[i]; /* add up squares */
+            weight[i] *= albedo[i];
         }
-        __m256 rand_vec = _mm256_load_ps(array_rnd);
-
-        __m256 roulette_mask = _mm256_cmp_ps(rand_vec, tl_vector, _CMP_GT_OS);
 
 
-        x = _mm256_blendv_ps(x, _mm256_blendv_ps(x, zeros_vector, weight_mask), roulette_mask);
-        y = _mm256_blendv_ps(y, _mm256_blendv_ps(y, zeros_vector, weight_mask), roulette_mask);
-        z = _mm256_blendv_ps(z, _mm256_blendv_ps(z, zeros_vector, weight_mask), roulette_mask);
-        u = _mm256_blendv_ps(u, _mm256_blendv_ps(u, zeros_vector, weight_mask), roulette_mask);
-        v = _mm256_blendv_ps(v, _mm256_blendv_ps(v, zeros_vector, weight_mask), roulette_mask);
-        w = _mm256_blendv_ps(w, _mm256_blendv_ps(w, ones_vector, weight_mask), roulette_mask);
-        weight = _mm256_blendv_ps(weight, _mm256_blendv_ps(weight, ones_vector, weight_mask), roulette_mask);
+        /* New direction, rejection method */
+        float xi1[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+        float xi2[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+        int t_mask[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
+        do {
+            #pragma omp simd aligned(xi1, xi2:32)
+            for (unsigned int i = 0; i < 8; ++i) {
+                xi1[i] = 2.0f * genRand(&r) - 1.0f;
+                xi2[i] = 2.0f * genRand(&r) - 1.0f;
+
+                if (t_mask[i] == 0) {
+                    t[i] = xi1[i] * xi1[i] + xi2[i] * xi2[i];
+                }
+            }
+            #pragma omp simd aligned(t:32)
+            for (unsigned int i = 0; i < 8; ++i) {
+                if (t[i] <= 1.0f) {
+                    t_mask[i] = 1;
+                }
+            }
+
+
+        } while (check_t_greater_1(t));
+
+        check_t_correct(t);
+
+        #pragma omp simd aligned(u, v, w, t, xi1, xi2, weight, x, y, z:32)
         for (unsigned int i = 0; i < 8; ++i) {
-            if (roulette_mask[i] && weight_mask[i]) {
-#pragma omp critical
-                photon_count++;
+
+            u[i] = 2.0f * t[i] - 1.0f;
+            v[i] = xi1[i] * sqrtf((1.0f - u[i] * u[i]) * (1.0f / t[i]));
+            w[i] = xi2[i] * sqrtf((1.0f - u[i] * u[i]) * (1.0f / t[i]));
+
+
+            if (weight[i] < 0.001f) { /* roulette */
+                weight[i] *= 10.0f;
+
+                if ((float)genRand(&r) > 0.1f) {
+                    // reset lane
+                    x[i] = 0.0f;
+                    y[i] = 0.0f;
+                    z[i] = 0.0f;
+                    u[i] = 0.0f;
+                    v[i] = 0.0f;
+                    w[i] = 1.0f;
+                    weight[i] = 1.0f;
+                    #pragma omp atomic
+                    photon_count++;
+                    #pragma omp flush
+                }
             }
         }
     }
-
-#pragma omp critical
-    for (int n = 0; n < SHELLS; ++n) {
-        heat[n] += heat_pr[n];
-        heat2[n] += heat2_pr[n];
+    #pragma omp simd
+    for (unsigned int i = 0; i < SHELLS; ++i) {
+        #pragma omp atomic
+            heat[i] += heat_pr[i];
+        #pragma omp atomic
+            heat2[i] += heat2_pr[i];
+        
+        
     }
 }
 
@@ -225,29 +201,21 @@ int main(void)
 
     // start timer
     double start = wtime();
-    // simulation
-    photon(r);
+// simulation
+#pragma omp parallel shared(photon_count, heat, heat2)
+    {
+        photon(r);
+    }
 
     // stop timer
     double end = wtime();
     assert(start <= end);
     double elapsed = end - start;
 
-    FILE* fptr = fopen("photons_results.txt", "a");
-    if (fptr == NULL) {
-        exit(EXIT_FAILURE);
-    }
-    fprintf(fptr, "%lf\n", 1e-3 * PHOTONS / elapsed);
-
-    fclose(fptr);
-
+    printf("%lf\n", 1e-3 * PHOTONS / elapsed);
     /*
     printf("# %lf seconds\n", elapsed);
     printf("# %lf K photons per second\n", 1e-3 * PHOTONS / elapsed);
-
-    
-    printf("%lf\n", 1e-3 * PHOTONS / elapsed);
-
 
     printf("# Radius\tHeat\n");
     printf("# [microns]\t[W/cm^3]\tError\n");
@@ -259,6 +227,6 @@ int main(void)
     }
     printf("# extra\t%12.5f\n", heat[SHELLS - 1] / PHOTONS);
     */
-
+    
     return 0;
 }
