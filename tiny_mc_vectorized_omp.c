@@ -56,7 +56,6 @@ static void photon(MTRand r)
 {
     float heat_pr[SHELLS];
     float heat2_pr[SHELLS];
-    //unsigned int photon_count;
     float x[8] = { 0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f };
     float y[8] = { 0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f };
     float z[8] = { 0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f };
@@ -141,7 +140,6 @@ static void photon(MTRand r)
 
         } while (check_t_greater_1(t));
 
-        check_t_correct(t);
 
         #pragma omp simd aligned(u, v, w, t, xi1, xi2, weight, x, y, z:32)
         for (unsigned int i = 0; i < 8; ++i) {

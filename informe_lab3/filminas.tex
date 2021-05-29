@@ -14,9 +14,10 @@
     \frame{\titlepage}
 
     \begin{frame}
-        \frametitle{Estrategias intentadas}
+        \frametitle{Estrategias e Implementaciones}
         \begin{itemize}
-            \item Paralelizando primero tinymc no vectorizado
+            \item Paralelizar tinymc no vectorizado
+            \item Paralelizar tinymc vectorizado
         \end{itemize}
     \end{frame}
 
@@ -60,5 +61,60 @@
         \includegraphics[width=4in]{imagenes/comp_prom_2.png}
     \end{frame}
 
+    \begin{frame}
+        \frametitle{Paralelizando tinymc vectorizado}
+        \begin{itemize}
+            \item Muy difícil paralelizar intrinsics
+            \item Refactorizar el código
+        \end{itemize}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Paralelizando tinymc vectorizado}
+        \includegraphics[width=3in]{imagenes/omp_vec_1.png}
+
+        OpenMP incluye directivas para vectorizar for loops
+
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Detalle de vectorización con OpenMP}
+         \includegraphics[width=4in, height=3in]{imagenes/omp_vec_2.png}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Detalle de vectorización con OpenMP}
+        \includegraphics[width=4in]{imagenes/omp_vec_3.png}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Detalle de vectorización con OpenMP}
+        \includegraphics[width=4in]{imagenes/omp_vec_4.png}
+
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Detalle de vectorización con OpenMP}
+        \includegraphics[width=4in]{imagenes/omp_vec_5.png}
+
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Detalle de vectorización con OpenMP}
+        \includegraphics[width=4in, height=3in]{imagenes/omp_vec_6.png}
+
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Detalle de vectorización con OpenMP}
+        \includegraphics[width=4in]{imagenes/omp_vec_7.png}
+
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Detalle de vectorización con OpenMP}
+        \includegraphics[width=4in]{imagenes/omp_vec_9.png}
+
+    \end{frame}
 
 \end{document}
