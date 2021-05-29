@@ -9,7 +9,6 @@ with open("means.txt") as df:
 if sys.argv[1] == "scaling":
     data = list(map(lambda s: s.split(":"), datafile))[:-1]
     num_photons = numpy.array(list(map(int, [d[0] for d in data])))
-    print(type(num_photons[0]))
     photons_per_second = numpy.array(
         list(map(lambda s: float(s.lstrip()), [d[1] for d in data])))
 
