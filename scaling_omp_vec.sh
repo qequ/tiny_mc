@@ -3,7 +3,7 @@
 
 # CAMBIAR ESTA VARIABLE PARA DEFINIR EL NUMERO DE THREADS
 # QUE OMP VA A PODER USAR !!!!!!!!!!!!!!!!!!!!!!!!!!!
-export OMP_NUM_THREADS=4
+export OMP_NUM_THREADS=8
 echo "NUMERO DE THREADS: $OMP_NUM_THREADS"
 
 for ((i = 1; i <= 64; i = i + 1)); do
