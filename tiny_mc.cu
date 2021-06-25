@@ -139,16 +139,30 @@ int main(void)
 
     checkCudaCall(cudaGetLastError());
 
+    // variables to measure time
+    float time;
+    cudaEvent_t start, stop;
+
+    checkCudaCall( cudaEventCreate(&start) );
+    checkCudaCall( cudaEventCreate(&stop) );
+    checkCudaCall( cudaEventRecord(start, 0) );
+
+
     //photon
     photon<<<block_count, BLOCK_SIZE>>>(heat, heat2, rng_states);
     checkCudaCall(cudaGetLastError());
 
+    checkCudaCall( cudaEventRecord(stop, 0) );
+    checkCudaCall( cudaEventSynchronize(stop) );
+    checkCudaCall( cudaEventElapsedTime(&time, start, stop) );
 
+    // the measure of time in cuda is ms
+    float elapsed = time / 1000;
     
-    //printf("# %lf seconds\n", elapsed);
-    //printf("# %lf K photons per second\n", 1e-3 * PHOTONS / elapsed);
+    printf("# %lf seconds\n", elapsed);
+    printf("# %lf K photons per second\n", 1e-3 * PHOTONS / elapsed);
 
-    //printf("%lf\n", 1e-3 * PHOTONS / elapsed);
+    printf("%lf\n", 1e-3 * PHOTONS / elapsed);
 
     printf("# Radius\tHeat\n");
     printf("# [microns]\t[W/cm^3]\tError\n");
