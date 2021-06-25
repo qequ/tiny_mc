@@ -26,3 +26,8 @@
 #define SEED (time(NULL)) // random seed
 #endif
 
+// parameters for cuda
+
+#ifndef BLOCK_SIZE
+#define BLOCK_SIZE 128 // random seed
+#endif
