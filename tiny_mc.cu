@@ -16,6 +16,7 @@
 
 // headers useful for cuda
 
+#include "helper_cuda.h"
 #include <ctime>
 #include <cuda_runtime.h>
 #include <curand_kernel.h>
@@ -120,8 +121,8 @@ int main(void)
     // initialize heat and heat2 to be shared between cpu and gpu
     float * heat;
     float * heat2;
-    cudaMallocManaged(&heat, SHELLS * sizeof(float));
-    cudaMallocManaged(&heat2, SHELLS * sizeof(float));
+    checkCudaCall(cudaMallocManaged(&heat, SHELLS * sizeof(float)));
+    checkCudaCall(cudaMallocManaged(&heat2, SHELLS * sizeof(float)));
 
     for (int i = 0; i < SHELLS; i++) {
         heat[i] = 0;
@@ -130,14 +131,17 @@ int main(void)
 
     // init curand
     curandState* rng_states;
-    cudaMallocManaged(&rng_states, total_num_threads * sizeof(curandState));
+    checkCudaCall(cudaMallocManaged(&rng_states, total_num_threads * sizeof(curandState)));
 
     init_curand<<<block_count, BLOCK_SIZE>>>(rng_states);
     //test_curand<<<block_count, BLOCK_SIZE>>>(rng_states);
     cudaDeviceSynchronize();
 
+    checkCudaCall(cudaGetLastError());
+
     //photon
     photon<<<block_count, BLOCK_SIZE>>>(heat, heat2, rng_states);
+    checkCudaCall(cudaGetLastError());
 
 
     
