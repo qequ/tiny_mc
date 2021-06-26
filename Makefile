@@ -1,5 +1,6 @@
 # Compilers
 CC = gcc
+CU = nvcc
 
 # Flags
 EXTRA_CFLAGS=
@@ -9,6 +10,7 @@ CFLAGS_VECTOR = -O3 -march=native $(EXTRA_CFLAGS)
 CFLAGS_OMP_LINEAL = -O3 -march=native -flto -fopenmp $(EXTRA_CFLAGS)
 CFLAGS_OMP_VECTOR = -O3 -ffast-math -flto -march=native -fopenmp -fopenmp-simd $(EXTRA_CFLAGS)
 
+CUFLAGS = -O3 -use_fast_math
 # Binary file
 TARGET = tiny_mc
 
@@ -18,11 +20,15 @@ C_OBJS = $(patsubst %.c, %.o, $(C_SOURCES))
 C_SOURCES_VEC = wtime.c mtwister.c tiny_mc_vectorized.c
 C_SOURCES_OMP = wtime.c mtwister.c tiny_mc_omp.c
 C_SOURCES_VEC_OMP = wtime.c mtwister.c tiny_mc_vectorized_omp.c
+C_SOURCES_CUDA = tiny_mc_shared_block.c
 # Rules
 all: $(TARGET)
 
 $(TARGET): $(C_OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+
+gpu:
+	$(CU) $(CUFLAGS) -o tiny_mc_gpu $(C_SOURCES_CUDA)
 
 vector:
 	$(CC) $(CFLAGS_VECTOR) -o tiny_mc_vectorized $(C_SOURCES_VEC) $(LDFLAGS)
