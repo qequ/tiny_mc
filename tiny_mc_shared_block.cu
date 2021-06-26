@@ -64,7 +64,7 @@ __global__ void photon(float* global_heat, float* global_heat2, curandState* rng
         }
     }
 
-	__syncthreads();
+    __syncthreads();
 
     // a photon per thread and if PHOTONS is not a multiple of 32 cape it
     if (gtid <= PHOTONS) {
@@ -119,7 +119,7 @@ __global__ void photon(float* global_heat, float* global_heat2, curandState* rng
         }
     }
 
-	__syncthreads();
+    __syncthreads();
 
     if (tid == 0) {
         for (unsigned int i = 0; i < SHELLS; ++i) {
@@ -127,7 +127,6 @@ __global__ void photon(float* global_heat, float* global_heat2, curandState* rng
             atomicAdd(&global_heat2[i], heat2_blocks[i]);
         }
     }
-
 }
 
 
@@ -137,14 +136,14 @@ __global__ void photon(float* global_heat, float* global_heat2, curandState* rng
 
 int main(void)
 {
-    printf("num_PHOTONES = %i", PHOTONS);
+    printf("num_PHOTONES = %i\n", PHOTONS);
     //get block_according to number of threads per block and PHOTONS
     double block_count = (PHOTONS + BLOCK_SIZE - 1) / BLOCK_SIZE;
     unsigned int total_num_threads = block_count * BLOCK_SIZE;
 
     // initialize heat and heat2 to be shared between cpu and gpu
-    float * heat;
-    float * heat2;
+    float* heat;
+    float* heat2;
     checkCudaCall(cudaMallocManaged(&heat, SHELLS * sizeof(float)));
     checkCudaCall(cudaMallocManaged(&heat2, SHELLS * sizeof(float)));
 
@@ -167,24 +166,33 @@ int main(void)
     float time;
     cudaEvent_t start, stop;
 
-    checkCudaCall( cudaEventCreate(&start) );
-    checkCudaCall( cudaEventCreate(&stop) );
-    checkCudaCall( cudaEventRecord(start, 0) );
+    checkCudaCall(cudaEventCreate(&start));
+    checkCudaCall(cudaEventCreate(&stop));
+    checkCudaCall(cudaEventRecord(start, 0));
 
 
     //photon
     photon<<<block_count, BLOCK_SIZE>>>(heat, heat2, rng_states);
     checkCudaCall(cudaGetLastError());
 
-    checkCudaCall( cudaEventRecord(stop, 0) );
-    checkCudaCall( cudaEventSynchronize(stop) );
-    checkCudaCall( cudaEventElapsedTime(&time, start, stop) );
+    checkCudaCall(cudaEventRecord(stop, 0));
+    checkCudaCall(cudaEventSynchronize(stop));
+    checkCudaCall(cudaEventElapsedTime(&time, start, stop));
 
     // the measure of time in cuda is ms
     float elapsed = time / 1000;
-    
-    printf("# %lf seconds\n", elapsed);
+
+    //printf("# %lf seconds\n", elapsed);
     printf("# %lf K photons per second\n", 1e-3 * PHOTONS / elapsed);
+
+
+    FILE* fptr = fopen("photons_results.txt", "a");
+    if (fptr == NULL) {
+        exit(EXIT_FAILURE);
+    }
+    fprintf(fptr, "%lf\n", 1e-3 * PHOTONS / elapsed);
+
+    fclose(fptr);
 
     /*
     printf("%lf\n", 1e-3 * PHOTONS / elapsed);
