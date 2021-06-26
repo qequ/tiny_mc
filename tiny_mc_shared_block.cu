@@ -137,6 +137,7 @@ __global__ void photon(float* global_heat, float* global_heat2, curandState* rng
 
 int main(void)
 {
+    printf("num_PHOTONES = %i", PHOTONS);
     //get block_according to number of threads per block and PHOTONS
     double block_count = (PHOTONS + BLOCK_SIZE - 1) / BLOCK_SIZE;
     unsigned int total_num_threads = block_count * BLOCK_SIZE;
