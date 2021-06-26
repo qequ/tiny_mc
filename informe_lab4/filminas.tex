@@ -5,7 +5,7 @@
 
 
 %Information to be included in the title page:
-\title{Laboratorio 2}
+\title{Laboratorio 4}
 \author{Alvaro Frias Garay - Ary Lautaro Di Bartolo}
 \institute{Universidad Nacional de Córdoba - Universidad Nacional de Cuyo}
 \date{2021}
@@ -98,12 +98,20 @@
 \end{frame}
 
 \begin{frame}
+	\frametitle{Roofline}
+	/opt/cuda/11.2.2/bin/ncu ./tinymcgpu	
+	\includegraphics[width=\textwidth]{imagenes/roofline.jpeg}\\
+	Teórico: 83.33\\
+	Logrado: 14.77
+\end{frame}
+
+\begin{frame}
     \frametitle{Scaling}
     \includegraphics[width=\textwidth]{imagenes/scaling_gpu.png}
 \end{frame}
 
 \begin{frame}
-    \frametitle{Posibles mejores}
+    \frametitle{Posibles mejoras}
     \begin{itemize}
         \item Uso de arrays a nivel de warp
         \item Escalar el problema
