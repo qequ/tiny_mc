@@ -20,7 +20,7 @@ C_OBJS = $(patsubst %.c, %.o, $(C_SOURCES))
 C_SOURCES_VEC = wtime.c mtwister.c tiny_mc_vectorized.c
 C_SOURCES_OMP = wtime.c mtwister.c tiny_mc_omp.c
 C_SOURCES_VEC_OMP = wtime.c mtwister.c tiny_mc_vectorized_omp.c
-C_SOURCES_CUDA = tiny_mc_shared_block.c
+C_SOURCES_CUDA = tiny_mc_shared_block.cu
 # Rules
 all: $(TARGET)
 
