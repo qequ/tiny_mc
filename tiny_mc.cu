@@ -115,7 +115,7 @@ __global__ void photon(float* global_heat, float* global_heat2, curandState* rng
 int main(void)
 {
     //get block_according to number of threads per block and PHOTONS
-    double block_count = ceil(PHOTONS / BLOCK_SIZE);
+    double block_count = (PHOTONS + BLOCK_SIZE - 1) / BLOCK_SIZE;
     unsigned int total_num_threads = block_count * BLOCK_SIZE;
 
     // initialize heat and heat2 to be shared between cpu and gpu
