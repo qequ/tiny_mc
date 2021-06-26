@@ -6,4 +6,5 @@ means.txt
 tiny_mc_vectorized
 tiny_mc_omp
 tiny_mc_vectorized_omp
+tiny_mc_gpu
 photons_results.txt
